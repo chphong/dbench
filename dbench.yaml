@@ -34,6 +34,8 @@ spec:
               value: "1"
             - name: TASK_ROUND  # generate stable result by running multi-times, 5 default
               value: "5"
+            - name: OUTPUT_FORMAT
+              value: "csv"  # dbench summary format: readable(default or absent), csv
           volumeMounts:
             - name: dbench-pv
               mountPath: /data
