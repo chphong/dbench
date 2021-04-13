@@ -4,11 +4,6 @@ metadata:
   name: dbench-pv-claim
 spec:
   storageClassName: ssd
-  # storageClassName: gp2
-  # storageClassName: local-storage
-  # storageClassName: ibmc-block-bronze
-  # storageClassName: ibmc-block-silver
-  # storageClassName: ibmc-block-gold
   accessModes:
     - ReadWriteOnce
   resources:
@@ -23,26 +18,28 @@ spec:
   template:
     spec:
       containers:
-      - name: dbench
-        image: logdna/dbench:latest
-        imagePullPolicy: Always
-        env:
-          - name: DBENCH_MOUNTPOINT
-            value: /data
-          # - name: DBENCH_QUICK
-          #   value: "yes"
-          # - name: FIO_SIZE
-          #   value: 1G
-          # - name: FIO_OFFSET_INCREMENT
-          #   value: 256M
-          # - name: FIO_DIRECT
-          #   value: "0"
-        volumeMounts:
-        - name: dbench-pv
-          mountPath: /data
+        - name: dbench
+          image: ndrpnt/dbench:1.0.0
+          imagePullPolicy: Always
+          env:
+            - name: DBENCH_MOUNTPOINT
+              value: /data
+            # - name: DBENCH_QUICK
+            #   value: "yes"
+            # - name: FIO_SIZE
+            #   value: 1G
+            # - name: FIO_OFFSET_INCREMENT
+            #   value: 256M
+            - name: FIO_DIRECT
+              value: "1"
+            - name: TASK_ROUND  # generate stable result by running multi-times, 5 default
+              value: "5"
+          volumeMounts:
+            - name: dbench-pv
+              mountPath: /data
       restartPolicy: Never
       volumes:
-      - name: dbench-pv
-        persistentVolumeClaim:
-          claimName: dbench-pv-claim
+        - name: dbench-pv
+          persistentVolumeClaim:
+            claimName: dbench-pv-claim
   backoffLimit: 4

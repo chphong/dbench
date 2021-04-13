@@ -17,10 +17,30 @@ if [ -z $FIO_DIRECT ]; then
     FIO_DIRECT=1
 fi
 
+if [ -z $TASK_ROUND ]; then
+    TASK_ROUND=5
+fi
+
 echo Working dir: $DBENCH_MOUNTPOINT
 echo
 
-if [ "$1" = 'fio' ]; then
+READ_IOPS_VAL_SUM=0
+WRITE_IOPS_VAL_SUM=0
+READ_BW_VAL_SUM=0
+WRITE_BW_VAL_SUM=0
+READ_LATENCY_VAL_SUM=0
+WRITE_LATENCY_VAL_SUM=0
+READ_SEQ_VAL_SUM=0
+WRITE_SEQ_VAL_SUM=0
+RW_MIX_R_IOPS_SUM=0
+RW_MIX_W_IOPS_SUM=0
+
+fio_test() {
+    echo
+    echo ====================
+    echo =  Dbench Round $1 =
+    echo ====================
+    echo
 
     echo Testing Read IOPS...
     READ_IOPS=$(fio --randrepeat=0 --verify=0 --ioengine=libaio --direct=$FIO_DIRECT --gtod_reduce=1 --name=read_iops --filename=$DBENCH_MOUNTPOINT/fiotest --bs=4K --iodepth=64 --size=$FIO_SIZE --readwrite=randread --time_based --ramp_time=2s --runtime=15s)
@@ -88,8 +108,50 @@ if [ "$1" = 'fio' ]; then
         echo
     fi
 
+    READ_IOPS_VAL_SUM=`expr $READ_IOPS_VAL_SUM + $READ_IOPS_VAL`
+    WRITE_IOPS_VAL_SUM=`expr $WRITE_IOPS_VAL_SUM + $WRITE_IOPS_VAL`
+    READ_BW_VAL_SUM=`expr $READ_BW_VAL_SUM + $READ_BW_VAL`
+    WRITE_BW_VAL_SUM=`expr $WRITE_BW_VAL_SUM + $WRITE_BW_VAL`
+    READ_LATENCY_VAL_SUM=`expr $READ_LATENCY_VAL_SUM + $READ_LATENCY_VAL`
+    WRITE_LATENCY_VAL_SUM=`expr $WRITE_LATENCY_VAL_SUM + $WRITE_LATENCY_VAL`
+    READ_SEQ_VAL_SUM=`expr $READ_SEQ_VAL_SUM + $READ_SEQ_VAL`
+    WRITE_SEQ_VAL_SUM=`expr $WRITE_SEQ_VAL_SUM + $WRITE_SEQ_VAL`
+    RW_MIX_R_IOPS_SUM=`expr $RW_MIX_R_IOPS_SUM + $RW_MIX_R_IOPS`
+    RW_MIX_W_IOPS_SUM=`expr $RW_MIX_W_IOPS_SUM + $RW_MIX_W_IOPS`
+
     echo All tests complete.
+    echo "Random Read/Write IOPS: $READ_IOPS_VAL/$WRITE_IOPS_VAL. BW: $READ_BW_VAL / $WRITE_BW_VAL"
+    if [ -z $DBENCH_QUICK ] || [ "$DBENCH_QUICK" == "no" ]; then
+        echo "Average Latency (usec) Read/Write: $READ_LATENCY_VAL/$WRITE_LATENCY_VAL"
+        echo "Sequential Read/Write: $READ_SEQ_VAL / $WRITE_SEQ_VAL"
+        echo "Mixed Random Read/Write IOPS: $RW_MIX_R_IOPS/$RW_MIX_W_IOPS"
+    fi
+
+    rm $DBENCH_MOUNTPOINT/fiotest
+}
+
+if [ "$1" = 'fio' ]; then
+    i=1
+
+    until [ ! $i -le $TASK_ROUND ]
+    do
+        fio_test $i
+        i=`expr $i + 1`
+    done
+
+    READ_IOPS_VAL=`expr $READ_IOPS_VAL_SUM / $TASK_ROUND`
+    WRITE_IOPS_VAL=`expr $WRITE_IOPS_VAL_SUM / $TASK_ROUND`
+    READ_BW_VAL=`expr $READ_BW_VAL_SUM / $TASK_ROUND`
+    WRITE_BW_VAL=`expr $WRITE_BW_VAL_SUM / $TASK_ROUND`
+    READ_LATENCY_VAL=`expr $READ_LATENCY_VAL_SUM / $TASK_ROUND`
+    WRITE_LATENCY_VAL=`expr $WRITE_LATENCY_VAL_SUM / $TASK_ROUND`
+    READ_SEQ_VAL=`expr $READ_SEQ_VAL_SUM / $TASK_ROUND`
+    WRITE_SEQ_VAL=`expr $WRITE_SEQ_VAL_SUM / $TASK_ROUND`
+    RW_MIX_R_IOPS=`expr $RW_MIX_R_IOPS_SUM / $TASK_ROUND`
+    RW_MIX_W_IOPS=`expr $RW_MIX_W_IOPS_SUM / $TASK_ROUND`
+
     echo
+    echo All iterations complete.
     echo ==================
     echo = Dbench Summary =
     echo ==================
@@ -100,7 +162,6 @@ if [ "$1" = 'fio' ]; then
         echo "Mixed Random Read/Write IOPS: $RW_MIX_R_IOPS/$RW_MIX_W_IOPS"
     fi
 
-    rm $DBENCH_MOUNTPOINT/fiotest
     exit 0
 fi
 
