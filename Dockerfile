@@ -1,4 +1,4 @@
-FROM dmonakhov/alpine-fio
+FROM chph/alpine-fio:v1.0.0
 
 VOLUME /tmp
 WORKDIR /tmp
