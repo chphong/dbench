@@ -1,0 +1,80 @@
+#Use the following YAMLs to create a cStor Storage Pool.
+apiVersion: openebs.io/v1alpha1
+kind: StoragePoolClaim
+metadata:
+  name: cstor-disk-pool
+  annotations:
+    cas.openebs.io/config: |
+      - name: PoolResourceRequests
+        value: |-
+            memory: 2Gi
+      - name: PoolResourceLimits
+        value: |-
+            memory: 4Gi
+spec:
+  name: cstor-disk-pool
+  type: disk
+  poolSpec:
+    poolType: striped
+  blockDevices:
+    blockDeviceList:
+      # - blockdevice-7431f162ee7fd9bf2e4f1a63aad1d64f
+      # - blockdevice-dc687f94f7f65181209cbb9f331f4868
+      # - blockdevice-dfa0b8be65223008ab04ea17b0c886fe
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: openebs-cstor
+  annotations:
+    openebs.io/cas-type: cstor
+    cas.openebs.io/config: |
+      - name: StoragePoolClaim
+        value: "cstor-disk-pool"
+      - name: ReplicaCount
+        value: "3"
+provisioner: openebs.io/provisioner-iscsi
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: openebs-dbench-pv-claim
+spec:
+  storageClassName: openebs-cstor
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dbench
+spec:
+  template:
+    spec:
+      containers:
+        - name: dbench
+          image: chph/dbench:v1.0.0
+          imagePullPolicy: Always
+          env:
+            - name: DBENCH_MOUNTPOINT
+              value: /data
+            # - name: DBENCH_QUICK
+            #   value: "yes"
+            # - name: FIO_SIZE
+            #   value: 1G
+            # - name: FIO_OFFSET_INCREMENT
+            #   value: 256M
+            - name: FIO_DIRECT
+              value: "1"
+          volumeMounts:
+            - name: dbench-pv
+              mountPath: /data
+      restartPolicy: Never
+      volumes:
+        - name: dbench-pv
+          persistentVolumeClaim:
+            claimName: openebs-dbench-pv-claim
+  backoffLimit: 4

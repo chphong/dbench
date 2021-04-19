@@ -8,7 +8,7 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 200Gi
+      storage: 10Gi
 ---
 apiVersion: batch/v1
 kind: Job
@@ -38,6 +38,6 @@ spec:
       restartPolicy: Never
       volumes:
         - name: dbench-pv
-          persistentVolumeClaim:
-            claimName: dbench-pv-claim
+          hostPath:
+            path: /test
   backoffLimit: 4

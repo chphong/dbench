@@ -1,7 +1,7 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: dbench-pv-claim
+  name: warpdrive-dbench-pv-claim
 spec:
   storageClassName: silver
   accessModes:
@@ -39,5 +39,5 @@ spec:
       volumes:
         - name: dbench-pv
           persistentVolumeClaim:
-            claimName: dbench-pv-claim
+            claimName: warpdrive-dbench-pv-claim
   backoffLimit: 4

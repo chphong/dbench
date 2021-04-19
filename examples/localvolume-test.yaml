@@ -1,0 +1,75 @@
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: local-storage
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: localvolume-dbench-pv-claim
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: local-storage
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: dbench-pv
+spec:
+  capacity:
+    storage: 10Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Delete
+  storageClassName: local-storage
+  local:
+    path: /mnt/disks/dbench-test
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - node01
+                - node02
+                - node03
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dbench
+spec:
+  template:
+    spec:
+      containers:
+        - name: dbench
+          image: chph/dbench:v1.0.0
+          imagePullPolicy: Always
+          env:
+            - name: DBENCH_MOUNTPOINT
+              value: /data
+            # - name: DBENCH_QUICK
+            #   value: "yes"
+            # - name: FIO_SIZE
+            #   value: 1G
+            # - name: FIO_OFFSET_INCREMENT
+            #   value: 256M
+            - name: FIO_DIRECT
+              value: "1"
+          volumeMounts:
+            - name: dbench-pv
+              mountPath: /data
+      restartPolicy: Never
+      volumes:
+        - name: dbench-pv
+          persistentVolumeClaim:
+            claimName: localvolume-dbench-pv-claim
+  backoffLimit: 4

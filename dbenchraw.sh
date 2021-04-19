@@ -37,9 +37,9 @@ RW_MIX_W_IOPS_SUM=0
 
 fio_test() {
     echo
-    echo ====================
-    echo =  Dbench Round $1 =
-    echo ====================
+    echo ==================
+    echo = Dbench Round $1 =
+    echo ==================
     echo
 
     echo Testing Read IOPS...
@@ -155,11 +155,17 @@ if [ "$1" = 'fio' ]; then
     echo ==================
     echo = Dbench Summary =
     echo ==================
-    echo "Random Read/Write IOPS: $READ_IOPS_VAL/$WRITE_IOPS_VAL. BW: $READ_BW_VAL / $WRITE_BW_VAL"
-    if [ -z $DBENCH_QUICK ] || [ "$DBENCH_QUICK" == "no" ]; then
-        echo "Average Latency (usec) Read/Write: $READ_LATENCY_VAL/$WRITE_LATENCY_VAL"
-        echo "Sequential Read/Write: $READ_SEQ_VAL / $WRITE_SEQ_VAL"
-        echo "Mixed Random Read/Write IOPS: $RW_MIX_R_IOPS/$RW_MIX_W_IOPS"
+    if [ "$OUTPUT_FORMAT" = 'csv' ]; then
+        # TODO : csv output format
+        echo "Random Read IOPS,Random Write IOPS,Mixed Random Read IOPS,Mixed Random Write IOPS,Random Read BW,Random Write BW,Seq Read BW,Seq Write BW,Read Lantency,Write Lantency"
+        echo "$READ_IOPS_VAL,$WRITE_IOPS_VAL,$RW_MIX_R_IOPS,$RW_MIX_W_IOPS,$READ_BW_VAL,$WRITE_BW_VAL,$READ_SEQ_VAL,$WRITE_SEQ_VAL,$READ_LATENCY_VAL,$WRITE_LATENCY_VAL"
+    else
+        echo "Random Read/Write IOPS: $READ_IOPS_VAL/$WRITE_IOPS_VAL. BW: $READ_BW_VAL / $WRITE_BW_VAL"
+        if [ -z $DBENCH_QUICK ] || [ "$DBENCH_QUICK" == "no" ]; then
+            echo "Average Latency (usec) Read/Write: $READ_LATENCY_VAL/$WRITE_LATENCY_VAL"
+            echo "Sequential Read/Write: $READ_SEQ_VAL / $WRITE_SEQ_VAL"
+            echo "Mixed Random Read/Write IOPS: $RW_MIX_R_IOPS/$RW_MIX_W_IOPS"
+        fi
     fi
 
     exit 0

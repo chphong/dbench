@@ -1,1 +1,4 @@
 *.txt
+/bin/
+.idea
+.DS_Store
